@@ -29,7 +29,7 @@ describe("projection WGS84 → système du projet (étape 7b)", () => {
   });
   it("liste fermée des systèmes (cas 2, lot 5, n° 92) : les systèmes dont Fadi a la définition, aucun vertical", () => {
     const s = systemesConnus();
-    expect(s.horizontaux).toEqual(expect.arrayContaining([{ code: "EPSG:2154", nom: "RGF93 / Lambert-93" }, { code: "EPSG:26191", nom: "Merchich / Nord Maroc" }]));
+    expect(s.horizontaux).toEqual(expect.arrayContaining([{ code: "EPSG:2154" }, { code: "EPSG:26191" }]));
     expect(s.horizontaux.every((x) => projeterWgs84(x.code, undefined, [[0, 0]]).ok !== undefined)).toBe(true);
     expect(s.verticaux).toEqual([]);
   });

@@ -198,6 +198,9 @@ describe("Cas 2, lot 4 : scènes", () => {
     const m = modifierScene(r.modele, id, { echelle: 100, soleil: { jour: 172, heure: 14 } }).modele;
     expect(m.annotations!.scenes![id]).toMatchObject({ echelle: 100, soleil: { jour: 172, heure: 14 } });
     expect(modifierScene(m, id, { echelle: null }).modele.annotations!.scenes![id]!.echelle).toBeUndefined();
+    // Cas 2, lot 5 (revue de #530) : l'année de la date est mémorisée avec la scène ; une année invalide est refusée.
+    expect(modifierScene(m, id, { soleil: { jour: 61, heure: 9, annee: 2024 } }).modele.annotations!.scenes![id]!.soleil).toEqual({ jour: 61, heure: 9, annee: 2024 });
+    expect(() => modifierScene(m, id, { soleil: { jour: 61, heure: 9, annee: 2024.5 } })).toThrow(/soleil/);
     expect(() => modifierScene(m, id, { echelle: 0 })).toThrow(/Échelle/);
     expect(lireEchelle("1:100")).toBe(100);
     expect(lireEchelle("1/50")).toBe(50);

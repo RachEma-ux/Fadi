@@ -11,7 +11,7 @@ tant qu'aucune source qualifiée n'est chargée ; les Ombres passent à une date
 | n° | Entrée | Où |
 |---|---|---|
 | 5 | Un seul ±0,00 NGF, cliqué puis tapé en place dans l'Emplacement (Entrée enregistre, Échap abandonne) ; c'est le niveau de référence des Niveaux et le H du point de base. L'ancien champ « Altitude » de l'Emplacement disparaît : la valeur déjà enregistrée (sites, GeoData) est gardée ; reçue de GeoData, elle déclare le ±0,00 s'il ne l'est pas encore, sans jamais remplacer un ±0,00 déclaré ; le site de projet reçoit le ±0,00 d'abord | `panneaux-l5.tsx` `SectionZeroProjet` ; `Planche.tsx` `poserZero`, `appliquerEmplacementGeoData` |
-| 92 | Système horizontal choisi dans une liste fermée lue par l'API (systèmes dont Fadi a la définition : EPSG:2154, EPSG:26191 ; un autre système se déclare par son .prj, comme avant) ; vertical « non déclaré » ; rappel dans Info modèle | `GET /sandbox/projections/systemes` (`systemesConnus`, noms dans `SITE_CRS_NOMS`) ; `projections-client.ts` `lireSystemesConnus` ; `SectionSystemes`, `RappelSysteme` |
+| 92 | Système horizontal choisi dans une liste fermée lue par l'API (systèmes dont Fadi a la définition : EPSG:2154, EPSG:26191 ; un autre système se déclare par son .prj, comme avant) ; vertical « non déclaré » ; rappel dans Info modèle | `GET /sandbox/projections/systemes` (`systemesConnus` : codes des systèmes que la projection sait calculer, sans nom) ; `projections-client.ts` `lireSystemesConnus` ; `SectionSystemes`, `RappelSysteme` |
 | 45 | Altitudes basse et haute, relatives au ±0,00 et NGF, et encombrement (longueur × largeur × hauteur) d'un objet, d'une face ou d'une sélection de la racine | `altitudes-l5.ts` `encombrement`, `boiteElements` ; `SectionAltitudes` dans Info entité |
 | 18 | Altitude du point visé, relative et NGF, au pied de la vue pendant le dessin | `EtiquetteVise` |
 | 55 | Déplacer : Tab fait défiler ce qu'attend Mesures (distance, altitude ±0,00, altitude NGF) ; l'altitude tapée pose le point bas de la sélection | `outils/deplacer.ts` (`saisirAltitude`) ; touche `Tab` de `ContexteOutil` |
@@ -20,7 +20,9 @@ tant qu'aucune source qualifiée n'est chargée ; les Ombres passent à une date
 | 105 | Heure légale : fuseau choisi dans la liste du navigateur, enregistré avec l'Emplacement, décalage (heure d'été comprise) à la date choisie ; sans fuseau, heure solaire comme avant ; la date se choisit au calendrier | `emplacement.ts` (`fuseau`) ; `fuseaux.ts` `decalageLegal` ; `PanneauOmbres` |
 | 110 | Course solaire depuis un point : un clic donne le point d'observation ; diagramme stéréographique des 21 juin, 21 mars et 21 décembre, masques formés par les objets de la Planche, périodes masquées en heures | `soleil-l5.ts` `courseSolaire`, `silhouetteMasques` ; outil de pointage `pointage-course-solaire` ; `DiagrammeCourseSolaire` |
 
-Un point posé sur une face (une fenêtre dans une façade) est masqué par le plan de cette face : tout le demi-espace
+Un objet en hauteur (balcon, avancée, bandeau) ne masque que l'intervalle de hauteur qu'il occupe : le soleil peut
+passer dessous (intervalles par tranche d'azimut, `estMasque`, revue de #530) ; un auvent au-dessus du point couvre
+jusqu'au zénith. Un point posé sur une face (une fenêtre dans une façade) est masqué par le plan de cette face : tout le demi-espace
 derrière elle est caché, rien devant ; posé sur le sol, rien n'est caché.
 
 ## Règle d'or
@@ -46,10 +48,15 @@ de la NOAA (d'après J. Meeus), écrit sans bibliothèque. Il est vérifié cont
 17 octobre 2003) à moins de 0,05° près (`soleil-l5.test.ts`). La hauteur est géométrique, sans réfraction. Le texte
 du panneau Ombres le dit.
 
+La date choisie garde son année dans une scène (`SoleilScene.annee`, revue de #530) : rappeler une scène du
+1er mars 2024 rend bien le 1er mars 2024.
+
 ## Données
 
-Aucune donnée n'est fournie par le code de l'interface : la liste des systèmes vient de l'API (les deux systèmes dont le
-serveur a déjà la définition pour les projections), les fuseaux viennent de la base des fuseaux du navigateur, les
+Aucune donnée n'est fournie par le code de l'interface : la liste des systèmes vient de l'API, qui rend seulement les
+codes des systèmes que sa projection sait déjà calculer (`POST /sandbox/projections`, #520). Ce n'est pas un
+référentiel : aucun nom de système n'est écrit dans le code (revue de #530) ; la maquette montrait « Lambert 93 —
+EPSG:2154 », la liste montre le code. Des noms et d'autres systèmes viendront d'une source qualifiée chargée en base. les fuseaux viennent de la base des fuseaux du navigateur, les
 masques ne viennent que des objets de la Planche (relief et bâtiments non modélisés : non évalués). Une altitude NGF est
 « non évaluée » tant que le ±0,00 n'est pas déclaré.
 

@@ -129,10 +129,15 @@ export interface MaillageMasques {
   readonly triangles: readonly number[];
 }
 
-/** Silhouette des masques : hauteur (degrés) par tranche d'azimut **vrai** (`pas` degrés, tranche k = [k·pas, (k+1)·pas[). */
+/**
+ * Masques vus du point, par tranche d'azimut **vrai** (`pas` degrés, tranche k = [k·pas, (k+1)·pas[) : intervalles de
+ * hauteur couverts (degrés, réunis et triés) et, pour le contour, la plus haute hauteur couverte. Un objet en hauteur
+ * (balcon, avancée) ne masque que son intervalle : le soleil peut passer dessous.
+ */
 export interface SilhouetteMasques {
   readonly pas: number;
   readonly hauteurs: readonly number[];
+  readonly intervalles: readonly (readonly (readonly [number, number])[])[];
 }
 
 /** Pas angulaire de la silhouette (choix Fadi : 2°, lisible sur un diagramme de 300 px). */
@@ -171,19 +176,8 @@ function surTriangle(q: Vec3, p: readonly number[], a: number, b: number, c: num
  */
 export function silhouetteMasques(point: Vec3, maillages: readonly MaillageMasques[], nord = 0, pas = PAS_SILHOUETTE): SilhouetteMasques {
   const n = Math.round(360 / pas);
-  const hauteurs = new Array<number>(n).fill(0);
-  const relever = (x: number, y: number, z: number) => {
-    const dx = x - point.x;
-    const dy = y - point.y;
-    const dz = z - point.z;
-    const horizontal = Math.hypot(dx, dy);
-    if (horizontal < ECART_POINT || dz <= 0) return;
-    const h = deg(Math.atan2(dz, horizontal));
-    // Azimut du dessin (depuis +y, horaire) ramené au nord vrai.
-    const az = modulo(deg(Math.atan2(dx, dy)) - nord, 360);
-    const k = Math.min(n - 1, Math.floor(az / pas));
-    if (h > hauteurs[k]!) hauteurs[k] = h;
-  };
+  const bruts: [number, number][][] = Array.from({ length: n }, () => []);
+  const tranche = (azDessin: number) => Math.min(n - 1, Math.floor(modulo(azDessin - nord, 360) / pas));
   // Face où le point est posé (une fenêtre dans un mur) : elle ne se masque pas par ses arêtes mais par son plan, qui
   // cache tout le demi-espace situé derrière elle (normale sortante, sens des triangles).
   const derriere = (nx: number, ny: number, nz: number) => {
@@ -191,22 +185,38 @@ export function silhouetteMasques(point: Vec3, maillages: readonly MaillageMasqu
       const a = (((k + 0.5) * pas + nord) * Math.PI) / 180; // azimut du dessin du milieu de la tranche
       const c = nx * Math.sin(a) + ny * Math.cos(a);
       if (c >= -1e-9) continue;
-      const h = nz <= 1e-9 ? 90 : deg(Math.atan(-c / nz));
-      if (h > hauteurs[k]!) hauteurs[k] = h;
+      bruts[k]!.push([0, nz <= 1e-9 ? 90 : deg(Math.atan(-c / nz))]);
     }
   };
   for (const m of maillages) {
     const p = m.positions;
     for (let t = 0; t + 2 < m.triangles.length; t += 3) {
-      const ids = [m.triangles[t]!, m.triangles[t + 1]!, m.triangles[t + 2]!];
-      const porteur = surTriangle(point, p, ids[0]! * 3, ids[1]! * 3, ids[2]! * 3);
+      const ids = [m.triangles[t]! * 3, m.triangles[t + 1]! * 3, m.triangles[t + 2]! * 3] as const;
+      const porteur = surTriangle(point, p, ids[0], ids[1], ids[2]);
       if (porteur) {
         derriere(porteur.x, porteur.y, porteur.z);
         continue;
       }
+      // Intervalle de hauteur du triangle dans chaque tranche : la coupe d'un triangle plan par le demi-plan vertical
+      // d'un azimut est un segment dont les extrémités sont sur ses arêtes ; les arêtes, découpées finement, le bornent.
+      const bornes = new Map<number, [number, number]>();
+      const relever = (x: number, y: number, z: number) => {
+        const dx = x - point.x;
+        const dy = y - point.y;
+        const horizontal = Math.hypot(dx, dy);
+        if (horizontal < ECART_POINT) return;
+        const h = deg(Math.atan2(z - point.z, horizontal));
+        const k = tranche(deg(Math.atan2(dx, dy)));
+        const b = bornes.get(k);
+        if (!b) bornes.set(k, [h, h]);
+        else {
+          if (h < b[0]) b[0] = h;
+          if (h > b[1]) b[1] = h;
+        }
+      };
       for (let k = 0; k < 3; k++) {
-        const a = ids[k]! * 3;
-        const b = ids[(k + 1) % 3]! * 3;
+        const a = ids[k]!;
+        const b = ids[(k + 1) % 3]!;
         const ax = p[a]!, ay = p[a + 1]!, az = p[a + 2]!;
         const bx = p[b]!, by = p[b + 1]!, bz = p[b + 2]!;
         // Écart angulaire vu du point, borné : assez de points pour ne sauter aucune tranche.
@@ -220,13 +230,48 @@ export function silhouetteMasques(point: Vec3, maillages: readonly MaillageMasqu
           relever(ax + (bx - ax) * f, ay + (by - ay) * f, az + (bz - az) * f);
         }
       }
+      // Triangle au-dessus du point (auvent, plafond) : il couvre le zénith, son intérieur monte jusqu'à 90°.
+      const zenith = dessus(point, p, ids[0], ids[1], ids[2]);
+      for (const [k, [lo, hi]] of bornes) {
+        const haut = zenith ? 90 : hi;
+        if (haut > 0) bruts[k]!.push([Math.max(0, lo), haut]);
+      }
     }
   }
-  return { pas, hauteurs };
+  // Réunion des intervalles de chaque tranche.
+  const intervalles = bruts.map((liste) => {
+    const tries = [...liste].sort((x, y) => x[0] - y[0]);
+    const sortie: [number, number][] = [];
+    for (const [lo, hi] of tries) {
+      const der = sortie[sortie.length - 1];
+      if (der && lo <= der[1] + 1e-9) der[1] = Math.max(der[1], hi);
+      else sortie.push([lo, hi]);
+    }
+    return sortie;
+  });
+  return { pas, hauteurs: intervalles.map((l) => (l.length ? l[l.length - 1]![1] : 0)), intervalles };
 }
 
-/** Hauteur du masque à un azimut vrai. */
+/** La verticale du point traverse le triangle au-dessus de lui. */
+function dessus(q: Vec3, p: readonly number[], a: number, b: number, c: number): boolean {
+  const x1 = p[a]!, y1 = p[a + 1]!, x2 = p[b]!, y2 = p[b + 1]!, x3 = p[c]!, y3 = p[c + 1]!;
+  const d = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+  if (Math.abs(d) < 1e-12) return false;
+  const l1 = ((y2 - y3) * (q.x - x3) + (x3 - x2) * (q.y - y3)) / d;
+  const l2 = ((y3 - y1) * (q.x - x3) + (x1 - x3) * (q.y - y3)) / d;
+  const l3 = 1 - l1 - l2;
+  if (l1 < 0 || l2 < 0 || l3 < 0) return false;
+  return l1 * p[a + 2]! + l2 * p[b + 2]! + l3 * p[c + 2]! > q.z + ECART_POINT;
+}
+
+/** Hauteur du masque à un azimut vrai (contour : la plus haute hauteur couverte). */
 export const hauteurMasque = (s: SilhouetteMasques, azimut: number): number => s.hauteurs[Math.min(s.hauteurs.length - 1, Math.floor(modulo(azimut, 360) / s.pas))] ?? 0;
+
+/** Le soleil à (azimut vrai, hauteur) est-il caché ? Il l'est s'il tombe dans un intervalle couvert de sa tranche. */
+export function estMasque(s: SilhouetteMasques, azimut: number, hauteur: number): boolean {
+  const liste = s.intervalles[Math.min(s.intervalles.length - 1, Math.floor(modulo(azimut, 360) / s.pas))] ?? [];
+  return liste.some(([lo, hi]) => hauteur >= lo && hauteur < hi);
+}
 
 export interface PointCourse {
   /** Heure (décimale) : légale si la course l'est, sinon solaire. */
@@ -282,7 +327,7 @@ export function courseSolaire(o: {
       const s = positionSoleil({ annee: o.annee, mois, jour, heure, decalageMinutes: dec, latitude: o.latitude, longitude: o.longitude ?? null });
       legale = legale || s.legale;
       if (s.hauteur <= 0) continue;
-      points.push({ heure, azimut: s.azimut, hauteur: s.hauteur, masque: s.hauteur < hauteurMasque(silhouette, s.azimut) });
+      points.push({ heure, azimut: s.azimut, hauteur: s.hauteur, masque: estMasque(silhouette, s.azimut, s.hauteur) });
     }
     const masquees: { de: number; a: number }[] = [];
     for (const p of points) {

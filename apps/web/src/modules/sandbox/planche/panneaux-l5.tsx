@@ -84,7 +84,7 @@ export function SectionSystemes({ point, systemes, lecture, onSysteme }: { point
           <select value={courant} disabled={lecture || !point || systemes === null} onKeyDown={arreter} onChange={(e) => onSysteme(e.target.value)} data-planche-systeme-horizontal>
             {courant === "" && <option value="">{t("planche.l5.systemes.non-declare")}</option>}
             {horizontaux.map((s) => (
-              <option key={s.code} value={s.code} translate="no">{`${s.nom} — ${s.code}`}</option>
+              <option key={s.code} value={s.code} translate="no">{s.code}</option>
             ))}
             {horsListe && <option value={courant} translate="no">{t("planche.l5.systemes.prj", { code: courant })}</option>}
           </select>
@@ -94,7 +94,7 @@ export function SectionSystemes({ point, systemes, lecture, onSysteme }: { point
           <select value={point?.systemeVertical ?? ""} disabled data-planche-systeme-vertical>
             <option value="">{t("planche.l5.systemes.non-declare")}</option>
             {(systemes?.verticaux ?? []).map((s) => (
-              <option key={s.code} value={s.code} translate="no">{`${s.nom} — ${s.code}`}</option>
+              <option key={s.code} value={s.code} translate="no">{s.code}</option>
             ))}
             {point?.systemeVertical && !(systemes?.verticaux ?? []).some((s) => s.code === point.systemeVertical) && <option value={point.systemeVertical} translate="no">{point.systemeVertical}</option>}
           </select>
@@ -153,9 +153,11 @@ export function DiagrammeCourseSolaire({ resultat, reference, onFermer }: { resu
     return [C + r * Math.sin(a), C - r * Math.cos(a)];
   };
   const s = resultat.silhouette;
-  const haut = s.hauteurs.map((h, k) => xy((k + 0.5) * s.pas, h));
-  const bas = s.hauteurs.map((_h, k) => xy((k + 0.5) * s.pas, 0)).reverse();
-  const masque = s.hauteurs.some((h) => h > 0) ? [...haut, ...bas].map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") : "";
+  // Masques : un quadrilatère par intervalle couvert de chaque tranche (un objet en hauteur laisse le ciel dessous).
+  const pt = ([x, y]: [number, number]) => `${x.toFixed(1)},${y.toFixed(1)}`;
+  const masque = s.intervalles
+    .flatMap((liste, k) => liste.map(([lo, hi]) => `M${pt(xy(k * s.pas, lo))}L${pt(xy((k + 1) * s.pas, lo))}L${pt(xy((k + 1) * s.pas, hi))}L${pt(xy(k * s.pas, hi))}Z`))
+    .join("");
   // Couleurs déjà en usage dans la Planche (aucune couleur nouvelle) : juin, mars, décembre.
   const couleurs = ["#e0a800", "#b54708", "#1f1f1f"];
   const p = resultat.point;
@@ -178,7 +180,7 @@ export function DiagrammeCourseSolaire({ resultat, reference, onFermer }: { resu
         <text x={C + R + 6} y={C + 4}>E</text>
         <text x={C - 4} y={C + R + 16}>S</text>
         <text x={C - R - 18} y={C + 4}>O</text>
-        {masque && <polygon points={masque} fill="currentColor" fillOpacity={0.25} stroke="currentColor" strokeOpacity={0.5} data-planche-course-masque />}
+        {masque && <path d={masque} fill="currentColor" fillOpacity={0.25} stroke="none" data-planche-course-masque />}
         {resultat.courses.map((c, i) => (
           <polyline key={`${c.mois}-${c.jour}`} points={c.points.map((q) => xy(q.azimut, q.hauteur).map((v) => v.toFixed(1)).join(",")).join(" ")} fill="none" stroke={couleurs[i]} strokeWidth={2.4} data-planche-course-jour={`${c.mois}-${c.jour}`} />
         ))}

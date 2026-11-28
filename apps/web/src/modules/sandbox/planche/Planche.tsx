@@ -2109,7 +2109,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
    */
   const captureEtatL4 = (m: Modele): Pick<Scene, "etat" | "soleil"> => {
     const o = vueRef.current?.lireOptions();
-    return { etat: capturerEtatScene(m, o?.modeFace), ...(o ? { soleil: { jour: o.jour, heure: o.heure } } : {}) };
+    return { etat: capturerEtatScene(m, o?.modeFace), ...(o ? { soleil: { jour: o.jour, heure: o.heure, annee: o.annee } } : {}) };
   };
   /** Scènes (§6.8) : caméra enregistrée dans la Planche (annotation « v »), un pas chacune. */
   const ajouterScene = useCallback(
@@ -2149,7 +2149,7 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
       // Cas 2, lot 4 : échelle nominale (n° 43) en projection parallèle, soleil (n° 108), état mémorisé (n° 11).
       if (s.projection === "parallele" && s.echelle) v.poserEchelleNominale(s.echelle);
       const style = s.etat?.style as OptionsAffichage["modeFace"] | undefined;
-      majOptions({ ...(s.ombres !== undefined ? { ombres: s.ombres } : {}), ...(s.soleil ? { jour: s.soleil.jour, heure: s.soleil.heure } : {}), ...(style ? { modeFace: style } : {}) });
+      majOptions({ ...(s.ombres !== undefined ? { ombres: s.ombres } : {}), ...(s.soleil ? { jour: s.soleil.jour, heure: s.soleil.heure, ...(s.soleil.annee !== undefined ? { annee: s.soleil.annee } : {}) } : {}), ...(style ? { modeFace: style } : {}) });
       setSceneActive(s.id);
       if (s.etat) {
         const m0 = histRef.current.present.modele;
@@ -5113,11 +5113,14 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     const suivante = VUES_ETAT[(VUES_ETAT.indexOf(actuelle ?? "projet") + 1) % VUES_ETAT.length]!;
     operer(t("planche.balise.vue-etat"), (m) => ({ modele: appliquerVueEtat(m, suivante).modele, message: t("planche.balise.note.vue-etat", { vue: t(`planche.balise.vue.${suivante}` as CleMessage) }) }));
   };
-  const modifierSceneL4 = (id: string, v: { echelle?: number | null; soleil?: { jour: number; heure: number } | null }): boolean => {
+  const modifierSceneL4 = (id: string, v0: { echelle?: number | null; soleil?: { jour: number; heure: number; annee?: number } | null }): boolean => {
     try {
+      // Cas 2, lot 5 : la date tapée dans Scènes garde l'année mémorisée de la scène (sinon l'année affichée).
+      const anneeScene = annotationsDe(histRef.current.present.modele.annotations).scenes?.[id]?.soleil?.annee ?? vueRef.current?.lireOptions().annee;
+      const v = v0.soleil && v0.soleil.annee === undefined && anneeScene !== undefined ? { ...v0, soleil: { ...v0.soleil, annee: anneeScene } } : v0;
       const r = modifierScene(histRef.current.present.modele, id, v);
       operer(t("planche.scene.modifier"), () => ({ modele: r.modele }));
-      if (v.soleil) majOptions({ jour: v.soleil.jour, heure: v.soleil.heure });
+      if (v.soleil) majOptions({ jour: v.soleil.jour, heure: v.soleil.heure, ...(v.soleil.annee !== undefined ? { annee: v.soleil.annee } : {}) });
       return true;
     } catch (err) {
       setMessage(err instanceof Error ? err.message : String(err));

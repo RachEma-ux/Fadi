@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { courseSolaire, dateDuRang, heureSolaireVraie, jourJulien, positionSoleil, rangDuJour, silhouetteMasques, texteHeure } from "./soleil-l5.js";
+import { courseSolaire, dateDuRang, heureSolaireVraie, jourJulien, positionSoleil, rangDuJour, silhouetteMasques, estMasque, texteHeure } from "./soleil-l5.js";
 
 describe("Cas 2, lot 5 — soleil par l'algorithme de référence (NOAA, d'après Meeus)", () => {
   it("jour julien et rang du jour", () => {
@@ -72,6 +72,28 @@ describe("Cas 2, lot 5 — soleil par l'algorithme de référence (NOAA, d'aprè
     // Posé sur le sol (normale vers le haut), rien n'est caché.
     const sol = silhouetteMasques({ x: 1, y: 1, z: 0 }, [{ positions: [-5, -5, 0, 5, -5, 0, 5, 5, 0], triangles: [0, 1, 2] }]);
     expect(Math.max(...sol.hauteurs)).toBe(0);
+  });
+
+  it("un objet en hauteur ne masque que son intervalle : le soleil d'hiver passe sous un bandeau (revue de #530)", () => {
+    // Bandeau de 40 m à 10 m au sud, entre 10 et 11 m de haut : vu sous 45° à 47,7° ; le soleil de midi en décembre
+    // (environ 20,6° à 46° de latitude) passe dessous.
+    const positions = [-20, -10, 10, 20, -10, 10, 20, -10, 11, -20, -10, 11];
+    const r = courseSolaire({ point: { x: 0, y: 0, z: 0 }, maillages: [{ positions, triangles: [0, 1, 2, 0, 2, 3] }], annee: 2026, latitude: 46, longitude: 6 });
+    const decembre = r.courses.find((c) => c.mois === 12)!;
+    expect(decembre.points.some((p) => p.masque)).toBe(false);
+    const sud = r.silhouette.intervalles[90]!;
+    expect(sud).toHaveLength(1);
+    expect(sud[0]![0]).toBeCloseTo(45, 0);
+    expect(sud[0]![1]).toBeCloseTo(47.7, 0);
+    expect(estMasque(r.silhouette, 181, 46)).toBe(true);
+    expect(estMasque(r.silhouette, 181, 20)).toBe(false);
+  });
+
+  it("un auvent au-dessus du point couvre jusqu'au zénith", () => {
+    const positions = [-3, -3, 3, 3, -3, 3, 3, 3, 3, -3, 3, 3];
+    const s = silhouetteMasques({ x: 0, y: 0, z: 0 }, [{ positions, triangles: [0, 1, 2, 0, 2, 3] }]);
+    expect(estMasque(s, 0, 80)).toBe(true);
+    expect(estMasque(s, 90, 30)).toBe(false); // sous le bord de l'auvent (45°), le ciel reste visible
   });
 
   it("heure écrite à la française", () => {

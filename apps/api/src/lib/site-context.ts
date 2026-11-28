@@ -29,11 +29,6 @@ export const SITE_CRS_DEFINITIONS: Record<string, string> = {
   "EPSG:26191": "+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs",
   "EPSG:2154": "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
 };
-/** Nom de chaque système connu (nom du registre EPSG), pour la liste fermée des systèmes du projet (cas 2, lot 5, n° 92). */
-export const SITE_CRS_NOMS: Readonly<Record<string, string>> = {
-  "EPSG:26191": "Merchich / Nord Maroc",
-  "EPSG:2154": "RGF93 / Lambert-93",
-};
 for (const [code, def] of Object.entries(SITE_CRS_DEFINITIONS)) proj4.defs(code, def);
 
 /** Conversion explicite CRS déclaré → WGS84 `[longitude, latitude]` ; `null` quand le CRS n'est pas défini. */

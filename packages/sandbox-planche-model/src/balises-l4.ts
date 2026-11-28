@@ -292,6 +292,8 @@ export interface SoleilScene {
   readonly jour: number;
   /** Heure décimale (0–24). */
   readonly heure: number;
+  /** (Cas 2, lot 5) Année de la date choisie au calendrier : le rang du jour se relit dans la bonne année. */
+  readonly annee?: number;
 }
 
 export interface EtatScene {
@@ -355,7 +357,7 @@ export function modifierScene(m: Modele, id: Id, v: ChangementScene): Resultat {
   const s = m.annotations?.scenes?.[id];
   if (!s) throw new RangeError("Scène introuvable.");
   if (v.echelle !== undefined && v.echelle !== null && !(Number.isInteger(v.echelle) && v.echelle >= 1 && v.echelle <= 100000)) throw new RangeError("Échelle nominale : saisissez 1:n, n entier.");
-  if (v.soleil && !(v.soleil.jour >= 1 && v.soleil.jour <= 366 && v.soleil.heure >= 0 && v.soleil.heure <= 24)) throw new RangeError("Date et heure du soleil invalides.");
+  if (v.soleil && !(v.soleil.jour >= 1 && v.soleil.jour <= 366 && v.soleil.heure >= 0 && v.soleil.heure <= 24 && (v.soleil.annee === undefined || (Number.isInteger(v.soleil.annee) && v.soleil.annee >= 1 && v.soleil.annee <= 9999)))) throw new RangeError("Date et heure du soleil invalides.");
   if (v.nom !== undefined && !v.nom.trim()) throw new RangeError("Une scène demande un nom.");
   return modifierAnnotations(m, (a) => {
     const { echelle, soleil, etat, ...reste } = s;
