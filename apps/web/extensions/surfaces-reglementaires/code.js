@@ -375,7 +375,7 @@ async function surfacesParNiveau(jeu) {
   var libres = 0;
   for (var i = 0; i < lus.niveaux.length; i++) {
     var n = lus.niveaux[i];
-    if (!(h > 0)) { lignes.push({ niveau: n, coupee: null }); continue; }
+    if (!(h > 0)) { lignes.push({ niveau: n, coupee: null, deduit: null, sdp: null }); continue; }
     var c = await planche.geometrie.coupe(n.altitude + h);
     c.ecartes.forEach(function (e) { ecartes[e.id] = true; });
     libres = c.facesLibres;
@@ -402,7 +402,9 @@ async function retenirCote() {
   var x = tx();
   var v = lireNombre(valeurs.cote);
   if (isNaN(v) || !valeurs.source.trim()) return alerte(x.coteIncomplete);
-  await enUnPas(x.op.ppri, function () { return planche.donnees.ecrire("projet", "ppri", { cote: v, source: valeurs.source.trim().slice(0, 160), plancher: valeurs.plancher }); });
+  // La zone refuge déjà mesurée est gardée : seuls les champs de la cote changent.
+  var g = (await donneesProjet()).ppri || {};
+  await enUnPas(x.op.ppri, function () { return planche.donnees.ecrire("projet", "ppri", Object.assign({}, g, { cote: v, source: valeurs.source.trim().slice(0, 160), plancher: valeurs.plancher })); });
   return info(x.coteEnregistree);
 }
 async function mesurerRefuge() {
@@ -454,6 +456,7 @@ async function etat() {
     var terrain = lireNombre(valeurs.terrain);
     if (em.empriseReg !== null && terrain > 0) e.resultats.push({ libelle: x.res.ces, valeur: fixe((em.empriseReg / terrain) * 100, 1, sep) + " %" });
     if (em.ecartes) e.resultats.push({ libelle: x.res.ecartes, valeur: String(em.ecartes), ton: "limite" });
+    if (em.libres) e.resultats.push({ libelle: x.res.libres, valeur: String(em.libres), ton: "limite" });
     e.vide = em.solides ? null : x.vides.emprise;
   } else if (onglet === "programme") {
     var prog = (await donneesProjet()).programme;

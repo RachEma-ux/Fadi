@@ -199,6 +199,24 @@ describe("extension « Surfaces réglementaires » — calculs", () => {
     ]);
   });
 
+  it("programme chargé sans table ni hauteur de coupe : niveaux « non évalués », jamais un écart calculé", async () => {
+    const p = planche(batiment().modele);
+    await p.commande("programme");
+    p.fichier("niveau;surface\nRDC;100\n", "programme.csv");
+    const e = await p.action("charger-programme", { onglet: "programme" });
+    expect(e.lignes.map((l) => [l.cellules, l.ton])).toEqual([[["RDC", "100,00 m²", "non évalué", "–"], "gris"]]);
+    expect(JSON.stringify(e)).not.toMatch(/NaN/);
+  });
+
+  it("emprise : les faces hors de tout groupe sont signalées, jamais omises en silence", async () => {
+    const f = creerFonctionsPlanche(batiment().modele);
+    f.api.rectangle([30, 0, 0], [1, 0, 0], [0, 1, 0]);
+    const p = planche(f.modele());
+    await p.commande("emprise");
+    const e = await p.action("etat", { onglet: "emprise" });
+    expect(e.resultats.find((r) => /hors de tout groupe/.test(r.libelle))).toMatchObject({ valeur: "1", ton: "limite" });
+  });
+
   it("PPRI : cote saisie avec sa source, premier plancher en NGF, zone refuge mesurée sur la sélection, règle non relue « à vérifier »", async () => {
     const d = batiment();
     const p = planche(d.modele);
@@ -214,5 +232,8 @@ describe("extension « Surfaces réglementaires » — calculs", () => {
     p.etat.selection = [d.garage];
     e = await p.action("mesurer-refuge", { onglet: "ppri" });
     expect(e.resultats.map((r) => r.valeur)).toEqual(expect.arrayContaining(["30,00 m²", "20,00 m² (à vérifier)", "conforme"]));
+    // Corriger la cote garde la zone refuge mesurée.
+    e = await p.action("retenir-cote", { onglet: "ppri", valeurs: { cote: "375,10", source: "PPRI d'essai, révisé" } });
+    expect(e.resultats.map((r) => r.valeur)).toEqual(expect.arrayContaining(["30,00 m²", "conforme"]));
   });
 });
