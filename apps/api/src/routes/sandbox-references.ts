@@ -21,7 +21,7 @@ import { requireAuth } from "../middleware/require-auth.js";
 
 /** Taille maximale d'un fichier de référence (choix Fadi : maquette d'un bâtiment courant, relevé décimé). */
 export const LIMITE_FICHIER_REFERENCE = 60 * 1024 * 1024;
-const FORMATS = ["obj", "stl", "ifc"] as const;
+const FORMATS = ["obj", "stl", "ifc", "pdf"] as const;
 type FormatReference = (typeof FORMATS)[number];
 
 /** Le contenu ressemble-t-il au format annoncé ? (signature, jamais d'après le seul nom). */
@@ -29,6 +29,8 @@ export function contenuConforme(format: FormatReference, o: Buffer): boolean {
   if (o.length === 0) return false;
   const tete = o.subarray(0, 65536).toString("latin1");
   if (format === "ifc") return /^\s*ISO-10303-21\s*;/.test(tete);
+  // PDF reçu (lot C4, étape 4) : signature « %PDF- » dans le premier kilo-octet.
+  if (format === "pdf") return tete.slice(0, 1024).includes("%PDF-");
   if (format === "stl") {
     if (/^\s*solid\b/.test(tete) && /facet\s+normal/.test(tete)) return true;
     return o.length >= 84 && o.length === 84 + 50 * o.readUInt32LE(80);
@@ -59,7 +61,7 @@ sandboxReferencesRouter.use(prive);
 sandboxReferencesRouter.post("/", express.raw({ type: () => true, limit: LIMITE_FICHIER_REFERENCE }), async (req, res) => {
   const format = String(req.headers["x-fadi-format"] ?? "").trim().toLowerCase() as FormatReference;
   const octets = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
-  if (!FORMATS.includes(format) || !contenuConforme(format, octets)) return void res.status(415).json({ error: "unsupported_media_type", message: "Fichier OBJ, STL ou IFC attendu, conforme au format annoncé." });
+  if (!FORMATS.includes(format) || !contenuConforme(format, octets)) return void res.status(415).json({ error: "unsupported_media_type", message: "Fichier OBJ, STL, IFC ou PDF attendu, conforme au format annoncé." });
   let nom: string;
   try {
     nom = decodeURIComponent(String(req.headers["x-fadi-nom"] ?? "")).trim();

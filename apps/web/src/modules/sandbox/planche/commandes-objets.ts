@@ -638,6 +638,37 @@ export interface CommandeReference {
 }
 export const COMMANDES_REFERENCES: readonly CommandeReference[] = (["references", "charger-reference", "recharger-reference", "verrouiller-reference", "afficher-reference", "controler-recolement", "supprimer-reference"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.references.${id}` as CleMessage, court: `planche.references.court.${id}` as CleMessage }));
 
+/**
+ * PDF reçu (cas 4, lot C4, étape 4) : ouvrir le panneau, ouvrir un PDF, mesurer, pointer la barre d'échelle, confirmer
+ * l'échelle, insérer la page, poser une page scannée en fond (règle d'or : icône, barre, raccourci en deux temps).
+ */
+export type IdCommandePdf = "pdf-recu" | "ouvrir-pdf" | "mesurer-pdf" | "barre-echelle-pdf" | "confirmer-echelle-pdf" | "inserer-pdf" | "poser-fond-pdf";
+export interface CommandePdf {
+  readonly id: IdCommandePdf;
+  readonly picto: Pictogramme;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_PDF: readonly CommandePdf[] = (["pdf-recu", "ouvrir-pdf", "mesurer-pdf", "barre-echelle-pdf", "confirmer-echelle-pdf", "inserer-pdf", "poser-fond-pdf"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.pdf.${id}` as CleMessage, court: `planche.pdf.court.${id}` as CleMessage }));
+
+/**
+ * Disponibilité : ouvrir le panneau toujours ; ouvrir un PDF hors lecture ; mesurer et pointer la barre sur une page
+ * vectorielle ; confirmer avec une échelle proposée ; insérer une page vectorielle à l'échelle confirmée (hors lecture) ;
+ * poser en fond une page scannée à l'échelle confirmée (hors lecture).
+ */
+export function disponibilitePdf(id: IdCommandePdf, s: { readonly page: boolean; readonly vectorielle: boolean; readonly image: boolean; readonly proposee: boolean; readonly confirmee: boolean; readonly lecture: boolean }): Disponibilite {
+  if (id === "pdf-recu") return { disponible: true, motif: null };
+  if (id === "ouvrir-pdf") return s.lecture ? { disponible: false, motif: "planche.debit.motif.lecture" } : { disponible: true, motif: null };
+  if (!s.page) return { disponible: false, motif: "planche.pdf.motif.page" };
+  if (id === "mesurer-pdf" || id === "barre-echelle-pdf") return s.vectorielle ? { disponible: true, motif: null } : { disponible: false, motif: "planche.pdf.motif.vectorielle" };
+  if (id === "confirmer-echelle-pdf") return s.proposee ? { disponible: true, motif: null } : { disponible: false, motif: "planche.pdf.motif.proposee" };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (!s.confirmee) return { disponible: false, motif: "planche.pdf.motif.confirmee" };
+  if (id === "inserer-pdf") return s.vectorielle ? { disponible: true, motif: null } : { disponible: false, motif: "planche.pdf.motif.vectorielle" };
+  return s.image ? { disponible: true, motif: null } : { disponible: false, motif: "planche.pdf.motif.image" };
+}
+
 /** Disponibilité : ouvrir toujours ; charger hors lecture ; le reste sur la référence choisie ; récolement : chargée et visible. */
 export function disponibiliteReference(id: IdCommandeReference, s: { readonly reference: boolean; readonly chargee: boolean; readonly lecture: boolean }): Disponibilite {
   if (id === "references") return { disponible: true, motif: null };

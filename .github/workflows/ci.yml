@@ -1154,6 +1154,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-references node apps/web/e2e/planche-references.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du PDF reçu (cas 4, lot C4, étape 4) — page vectorielle en arêtes et arcs, échelle proposée puis confirmée, barre d'échelle, mesure, page scannée en fond (apps/web/e2e/planche-pdf-recu.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-pdf-recu node apps/web/e2e/planche-pdf-recu.mjs 2>&1 | tee -a e2e.log
       - name: Recette accrochage et saisie (cas 2, lot 2) — panneau Accrochage, unités et paramètres, Mesures, Mètre en réseau, Info entité d'une arête (apps/web/e2e/planche-accrochage-saisie.mjs)
         if: ${{ matrix.shard == 'planche' }}
         run: |

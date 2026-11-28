@@ -52,6 +52,8 @@ export * from "./feuilles.js";
 export * from "./reserves.js";
 export * from "./fonds.js";
 export * from "./fiche-calage.js";
+export * from "./pdf-recu.js";
+export * from "./inflate.js";
 export * from "./references.js";
 export * from "./enveloppe.js";
 export * from "./controle-l3.js";

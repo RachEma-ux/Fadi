@@ -4432,6 +4432,9 @@ CREATE TABLE IF NOT EXISTS sandbox_references_fichiers (
   ajoute_le timestamptz NOT NULL DEFAULT now(),
   UNIQUE (proprietaire_id, empreinte)
 );
+-- PDF reçu (cas 4, lot C4, étape 4) : le PDF d'origine est rangé tel quel dans la même archive.
+ALTER TABLE sandbox_references_fichiers DROP CONSTRAINT IF EXISTS sandbox_references_fichiers_format_check;
+ALTER TABLE sandbox_references_fichiers ADD CONSTRAINT sandbox_references_fichiers_format_check CHECK (format IN ('obj', 'stl', 'ifc', 'pdf'));
 -- Fichiers de calage des orthophotos (world file, .prj ; lot C4, étape 2) rangés tels quels avec les originaux.
 ALTER TABLE sandbox_fonds_originaux DROP CONSTRAINT IF EXISTS sandbox_fonds_originaux_type_check;
 ALTER TABLE sandbox_fonds_originaux ADD CONSTRAINT sandbox_fonds_originaux_type_check CHECK (type IN ('image/png', 'image/jpeg', 'text/plain'));
