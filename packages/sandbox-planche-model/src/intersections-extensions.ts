@@ -137,55 +137,55 @@ export function collisionsEntreObjets(
   groupeA: (f: FacePlacee) => Id | null,
   groupeB?: (f: FacePlacee) => Id | null,
 ): { collisions: Collision[]; tronque: boolean } {
-  const A: { p: Preparee; o: Id }[] = [];
-  const B: { p: Preparee; o: Id }[] = [];
+  // Balayage le long de x : chaque face entre dans l'ordre de son x minimal et n'est confrontée qu'aux faces encore
+  // « actives » (dont l'intervalle en x recouvre le sien). Toute paire confrontée compte dans `MAX_PAIRES_FACES`, ce
+  // qui borne le travail entier, pas seulement les essais de traversée.
+  type Entree = { p: Preparee; oa: Id | null; ob: Id | null };
+  const entrees: Entree[] = [];
   for (const f of faces) {
     const p = preparer(f);
     if (!p) continue;
     const oa = groupeA(f);
-    if (oa !== null) A.push({ p, o: oa });
     const ob = groupeB ? groupeB(f) : oa;
-    if (ob !== null) B.push({ p, o: ob });
+    if (oa !== null || ob !== null) entrees.push({ p, oa, ob });
   }
+  entrees.sort((x, y) => x.p.min.x - y.p.min.x);
   const parPaire = new Map<string, { a: Id; b: Id; longueur: number; segments: Segment3[]; faces: [Id, Id][] }>();
   let paires = 0;
   let tronque = false;
-  // Tri par x minimal : seules les faces dont les intervalles en x se recouvrent sont confrontées.
-  B.sort((x, y) => x.p.min.x - y.p.min.x);
-  const minsB = B.map((x) => x.p.min.x);
-  for (const fa of A) {
-    // Première face de B dont min.x peut recouvrir fa (recherche dichotomique sur min.x ≤ fa.max.x).
-    let fin = minsB.length;
-    let lo = 0;
-    let hi = minsB.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if ((minsB[mid] as number) <= fa.p.max.x + TOL_TRAVERSEE) lo = mid + 1;
-      else hi = mid;
+  const confronter = (fa: Preparee, oa: Id, fb: Preparee, ob: Id): boolean => {
+    if (oa === ob) return true;
+    if (++paires > MAX_PAIRES_FACES) {
+      tronque = true;
+      return false;
     }
-    fin = lo;
-    for (let j = 0; j < fin; j++) {
-      const fb = B[j] as { p: Preparee; o: Id };
-      if (fb.o === fa.o) continue;
-      if (fb.p.max.x < fa.p.min.x - TOL_TRAVERSEE) continue;
-      if (!groupeB && fa.o > fb.o) continue;
-      if (++paires > MAX_PAIRES_FACES) {
-        tronque = true;
-        break;
-      }
-      const segs = traverseePreparees(fa.p, fb.p);
-      if (segs.length === 0) continue;
-      const cle = `${fa.o}\u0000${fb.o}`;
-      const c = parPaire.get(cle) ?? { a: fa.o, b: fb.o, longueur: 0, segments: [], faces: [] };
-      parPaire.set(cle, c);
-      for (const s of segs) {
-        c.longueur += len(sub(s[1], s[0]));
-        if (c.segments.length < MAX_SEGMENTS_COLLISION) c.segments.push(s);
-        else tronque = true;
-      }
-      if (c.faces.length < MAX_SEGMENTS_COLLISION) c.faces.push([fa.p.f.id, fb.p.f.id]);
+    const segs = traverseePreparees(fa, fb);
+    if (segs.length === 0) return true;
+    // Sans liste B, la paire est rangée une seule fois, dans l'ordre des identifiants d'objets.
+    const inverse = !groupeB && oa > ob;
+    const [a, b, pa, pb] = inverse ? [ob, oa, fb, fa] : [oa, ob, fa, fb];
+    const cle = `${a}\u0000${b}`;
+    const c = parPaire.get(cle) ?? { a, b, longueur: 0, segments: [], faces: [] };
+    parPaire.set(cle, c);
+    for (const s of segs) {
+      c.longueur += len(sub(s[1], s[0]));
+      if (c.segments.length < MAX_SEGMENTS_COLLISION) c.segments.push(s);
+      else tronque = true;
     }
-    if (tronque && paires > MAX_PAIRES_FACES) break;
+    if (c.faces.length < MAX_SEGMENTS_COLLISION) c.faces.push([pa.f.id, pb.f.id]);
+    return true;
+  };
+  let actifsA: Entree[] = [];
+  let actifsB: Entree[] = [];
+  const garder = (l: Entree[], x: number) => l.filter((e) => e.p.max.x >= x - TOL_TRAVERSEE);
+  balayage: for (const e of entrees) {
+    actifsA = garder(actifsA, e.p.min.x);
+    actifsB = groupeB ? garder(actifsB, e.p.min.x) : actifsA;
+    if (e.oa !== null) for (const x of actifsB) if (x.ob !== null && !confronter(e.p, e.oa, x.p, x.ob)) break balayage;
+    // Sans liste B, la confrontation ci-dessus couvre déjà les deux sens.
+    if (groupeB && e.ob !== null) for (const x of actifsA) if (x.oa !== null && !confronter(x.p, x.oa, e.p, e.ob)) break balayage;
+    if (e.oa !== null) actifsA.push(e);
+    if (groupeB && e.ob !== null) actifsB.push(e);
   }
   return { collisions: [...parPaire.values()].sort((x, y) => y.longueur - x.longueur || (x.a < y.a ? -1 : x.a > y.a ? 1 : x.b < y.b ? -1 : 1)), tronque };
 }

@@ -358,7 +358,9 @@ pose sa position comme Emplacement (un pas d'historique) et active l'extension a
     modèle, 4 × 4 en lignes), `origine`, `axes`, `contenu` (faces, arêtes, objets directement contenus), matière, balise,
     niveau, masqué, verrouillé. `planche.geometrie.intersection(objets, contre)` rend les traversées face contre face entre
     objets (`{ collisions: [{ a, b, longueur, segments, faces }], tronque }`) : un contact (boîtes accolées, bord posé sur
-    une face) ou des faces coplanaires ne sont pas une traversée ; sans `contre`, les objets sont confrontés entre eux.
+    une face) ou des faces coplanaires ne sont pas une traversée ; sans `contre`, les objets sont confrontés entre eux. Les
+    faces sont balayées le long de x et toute paire confrontée compte dans la borne (2 000 000, puis `tronque`) ; un modèle
+    imbriqué sur plus de 32 niveaux est refusé (comme `geometrie.rayon`), jamais contrôlé en partie.
     `planche.modele.lire({ details: true })` rend aussi la `normale` et les `contoursTrous` de chaque face, en portée
     contexte comme monde. Permission `modele.lire`.
   - *Extension « Échanges DXF »* (cas 3, lot 1, `apps/web/extensions/echanges-dxf/`, protocole 1.1 ; sources, assembleur

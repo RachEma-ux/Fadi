@@ -69,6 +69,29 @@ export const MAX_NOM_OPERATION = 80;
 export const MAX_ENTITES_LECTURE = 50_000;
 /** (1.1) Niveaux d'occurrences imbriquées descendus par la lecture du modèle entier ; au-delà, la lecture est refusée. */
 export const MAX_PROFONDEUR_MONDE = 32;
+
+/** Nombre de niveaux d'objets imbriqués du modèle (0 sans objet), calculé par définition (mémoïsé, sans boucle). */
+export function profondeurObjets(m: Modele): number {
+  const memo = new Map<Id, number>();
+  const enCours = new Set<Id>();
+  const contexte = (c: Contexte): number => {
+    let h = 0;
+    for (const o of Object.values(c.occurrences)) h = Math.max(h, 1 + definition(o.definition));
+    return h;
+  };
+  const definition = (id: Id): number => {
+    const connu = memo.get(id);
+    if (connu !== undefined) return connu;
+    const d = m.definitions[id];
+    if (!d || enCours.has(id)) return 0;
+    enCours.add(id);
+    const h = contexte(d.contenu);
+    enCours.delete(id);
+    memo.set(id, h);
+    return h;
+  };
+  return contexte(m.racine);
+}
 export const MAX_SELECTION_EXTENSION = 10_000;
 /** (1.1) Segments d'un seul appel « lignes » ; côtés d'un arc ou d'un cercle (bornes de la Planche, 3 à 999). */
 export const MAX_SEGMENTS_APPEL = 20_000;
@@ -998,6 +1021,8 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     const m = vue().modele();
     const absent = [...objets, ...(contre ?? [])].find((id) => cheminsVers(m, id).length === 0);
     if (absent !== undefined) return refus("objet_introuvable", absent);
+    // La scène s'arrête à `MAX_PROFONDEUR_MONDE` niveaux : un modèle plus profond est refusé, jamais contrôlé en partie.
+    if (profondeurObjets(m) > MAX_PROFONDEUR_MONDE) return refus("argument_invalide", `modèle imbriqué sur plus de ${MAX_PROFONDEUR_MONDE} niveaux`);
     const faces: FacePlacee[] = scene(m)
       .filter((el): el is Extract<ReturnType<typeof scene>[number], { genre: "face" }> => el.genre === "face")
       .map((el) => ({ id: el.id, chemin: el.chemin, exterieur: el.exterieur, trous: el.trous, normale: el.normale }));
@@ -1031,6 +1056,7 @@ export function creerServicesExtension(fiche: Pick<FicheExtension, "permissions"
     // Un objet imbriqué (groupe dans un groupe) se cherche dans tout le modèle, comme le parcours des rayons.
     const absent = (objets ?? []).find((id) => !f.existe(id) && cheminsVers(f.modele(), id).length === 0);
     if (absent !== undefined) return refus("objet_introuvable", absent);
+    if (profondeurObjets(f.modele()) > MAX_PROFONDEUR_MONDE) return refus("argument_invalide", `modèle imbriqué sur plus de ${MAX_PROFONDEUR_MONDE} niveaux`);
     const filtre = objets && objets.length > 0 ? new Set(objets) : null;
     const faces = scene(f.modele()).filter((el): el is Extract<typeof el, { genre: "face" }> => el.genre === "face" && (!filtre || el.chemin.some((c) => filtre.has(c))));
     const impacts = lus.map((r) => {

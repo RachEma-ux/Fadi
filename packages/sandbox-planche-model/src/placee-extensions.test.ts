@@ -73,6 +73,29 @@ describe("protocole 1.7 : traversée face contre face (logique pure)", () => {
     expect(r.collisions[0]!.longueur).toBeCloseTo(2, 9);
     expect(collisionsEntreObjets(faces, de(["C"]), de(["A", "B"])).collisions).toEqual([]);
   });
+  it("balayage borné : 40 000 faces disjointes le long de x, rien à confronter, rien de tronqué", () => {
+    const faces = Array.from({ length: 40_000 }, (_, i) => ({ ...carre(`f${i}`, v3(i * 3, 0, 0), Y, Z), chemin: [i % 2 ? "A" : "B"] }));
+    const r = collisionsEntreObjets(faces, (f) => f.chemin[0] ?? null);
+    expect(r).toEqual({ collisions: [], tronque: false });
+  });
+  it("le balayage rend les mêmes collisions que la confrontation de toutes les paires", () => {
+    let graine = 7;
+    const hasard = () => ((graine = (graine * 16807) % 2147483647) / 2147483647) * 6 - 3;
+    const axes = [X, Y, Z];
+    const faces = Array.from({ length: 60 }, (_, i) => ({ ...carre(`f${i}`, v3(hasard(), hasard(), hasard()), axes[i % 3]!, axes[(i + 1) % 3]!), chemin: [`O${i % 5}`] }));
+    const r = collisionsEntreObjets(faces, (f) => f.chemin[0] ?? null);
+    const attendu = new Map<string, number>();
+    for (const fa of faces)
+      for (const fb of faces) {
+        const [oa, ob] = [fa.chemin[0]!, fb.chemin[0]!];
+        if (oa >= ob) continue;
+        const l = longueur(traverseeFaces(fa, fb));
+        if (l > 0) attendu.set(`${oa}-${ob}`, (attendu.get(`${oa}-${ob}`) ?? 0) + l);
+      }
+    expect(r.collisions.length).toBe(attendu.size);
+    expect(attendu.size).toBeGreaterThan(0);
+    for (const c of r.collisions) expect(c.longueur).toBeCloseTo(attendu.get(`${c.a}-${c.b}`)!, 9);
+  });
 });
 
 /** Deux boîtes groupées : A (0..2)³, B déplacée de `decalage` ; un groupe C contient B (imbrication). */
@@ -106,6 +129,15 @@ describe("protocole 1.7 : geometrie.intersection", () => {
     for (const faux of [{}, { objets: [] }, { objets: "x" }, { objets: [a], contre: [] }, { objets: [1] }]) expect(servir(planche(m), "geometrie.intersection", faux)).toMatchObject({ ok: false, erreur: "argument_invalide" });
     expect(servir(planche(m), "geometrie.intersection", { objets: [a, "inconnu"] })).toEqual({ ok: false, erreur: "objet_introuvable", detail: "inconnu" });
     expect(servir(planche(m), "geometrie.intersection", { objets: [a] }, [])).toEqual({ ok: false, erreur: "permission_refusee", detail: "modele.lire" });
+  });
+  it("un modèle imbriqué au-delà de 32 niveaux est refusé, jamais contrôlé en partie (intersection et rayons)", () => {
+    const f = creerFonctionsPlanche(modeleVide());
+    const a = f.api.grouper(f.api.boite([0, 0, 0], 2, 2, 2), "A") as Id;
+    let b = f.api.grouper(f.api.boite([1, 1, 1], 2, 2, 2), "B") as Id;
+    for (let i = 0; i < 32; i++) b = f.api.grouper([b], `N${i}`) as Id;
+    const m = f.modele();
+    expect(servir(planche(m), "geometrie.intersection", { objets: [a, b] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
+    expect(servir(planche(m), "geometrie.rayon", { rayons: [{ origine: [-5, 1, 1], direction: [1, 0, 0] }] })).toMatchObject({ ok: false, erreur: "argument_invalide" });
   });
 });
 
