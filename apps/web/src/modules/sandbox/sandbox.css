@@ -190,6 +190,24 @@
   border: 3px solid #fff;
   box-shadow: 0 0 0 1px #00a000;
 }
+.sandbox-planche .planche-marqueur[data-type="quadrant"],
+.sandbox-planche .planche-marqueur[data-type="point-guide"] {
+  background: transparent;
+  border: 2px solid currentColor;
+  box-shadow: none;
+}
+.sandbox-planche .planche-marqueur[data-type="intersection-apparente"],
+.sandbox-planche .planche-marqueur[data-type="croisement"] {
+  background: transparent;
+  border: 2px solid currentColor;
+  box-shadow: none;
+  border-radius: 0;
+  transform: rotate(45deg);
+}
+.sandbox-planche .planche-marqueur[data-type="axe-median"],
+.sandbox-planche .planche-marqueur[data-type="sur-guide"] {
+  border-radius: 0;
+}
 .sandbox-planche .planche-point-reference {
   display: none;
   position: absolute;
@@ -220,6 +238,10 @@
   color: #000;
   font-size: 0.8rem;
   white-space: nowrap;
+}
+.sandbox-planche .planche-infobulle[data-presque] {
+  color: var(--danger, #a12626);
+  border-color: currentColor;
 }
 .sandbox-planche .planche-cadre {
   display: none;
@@ -4077,6 +4099,87 @@
   margin-left: 22px;
   border-left: 1px solid rgba(15, 76, 58, 0.18);
 }
+/* Extensions installées, rangées dans « Extensions » (maquette du 27 novembre 2026) : nom dépliable sur ses commandes,
+   case « Afficher / Masquer » de sa barre dans la Planche. */
+.sandbox-planche .planche-outils-ajoutees-titre {
+  display: block;
+  margin: 6px 0 2px 28px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(15, 76, 58, 0.18);
+  font-size: 0.78rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-outils-ajoutee-tete {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 20px;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-ajoutee-nom {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sandbox-planche .planche-outils-liste button.planche-outils-ajoutee-nom:hover,
+.sandbox-planche .planche-outils-liste .planche-outils-case:hover {
+  background: rgba(15, 76, 58, 0.08);
+}
+.sandbox-planche .planche-outils-ajoutee-nom .planche-outils-libelle {
+  flex: 1;
+  min-width: 0;
+}
+.sandbox-planche .planche-outils-liste .planche-outils-case {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.sandbox-planche .planche-outils-case-boite {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1.5px solid #1f7a57;
+  border-radius: 3px;
+  background: #fff;
+}
+.sandbox-planche .planche-outils-case-boite[data-coche] {
+  background: #1f7a57;
+}
+.sandbox-planche .planche-outils-case-boite[data-coche]::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0;
+  width: 4px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.sandbox-planche .planche-outils-ajoutee .planche-outils-extension-commandes {
+  margin-left: 42px;
+}
 
 /* Extensions installées (protocole des extensions, lot 3) : icône d'une commande (image du paquet), pastille de la
    famille dans la liste « Outils », avis au-dessus de la barre d'état, fenêtre de saisie. */
@@ -4620,4 +4723,328 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.2rem 0.6rem;
+}
+/* Cas 4 : en-tête des panneaux Niveaux, Locaux, Plan vectoriel et Feuilles — icône et raccourci (maquettes). */
+.sandbox-planche .planche-panneau .canevas-panneau-tete h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sandbox-planche .planche-panneau .canevas-panneau-tete:has(.planche-panneau-raccourci) {
+  display: flex;
+  align-items: center;
+}
+.sandbox-planche .planche-panneau-raccourci {
+  margin-left: auto;
+  margin-right: 0.4rem;
+  font-size: 0.8rem;
+  color: rgba(27, 77, 66, 0.75);
+}
+/* Cas 4, étape 6 : feuilles (liste, aperçu de la feuille, champs, fenêtre de vue). */
+@media (min-width: 64rem) {
+  .sandbox-planche .planche-panneau[data-planche-panneau="feuilles"] {
+    width: min(66rem, calc(100% - var(--colonne-l) - 5rem));
+  }
+}
+.sandbox-planche .planche-feuilles-corps {
+  display: grid;
+  grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr) minmax(12rem, 15rem);
+  gap: 0.75rem;
+  align-items: start;
+}
+@media (max-width: 63.99rem) {
+  .sandbox-planche .planche-feuilles-corps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.sandbox-planche .planche-feuilles-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sandbox-planche .planche-feuilles-liste li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.4rem;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid rgba(27, 77, 66, 0.1);
+}
+.sandbox-planche .planche-feuilles-liste li.est-choisi {
+  background: rgba(26, 95, 214, 0.14);
+}
+.sandbox-planche .planche-feuilles-liste li button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.sandbox-planche .planche-feuilles-liste small {
+  color: rgba(27, 77, 66, 0.7);
+}
+.sandbox-planche .planche-feuilles-pile {
+  flex-direction: column;
+  align-items: stretch;
+}
+.sandbox-planche .planche-feuilles-scene {
+  display: grid;
+  place-items: center;
+  padding: 0.6rem;
+  border-radius: 8px;
+  background: rgba(27, 77, 66, 0.08);
+}
+.sandbox-planche .planche-feuilles-scene img {
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  cursor: crosshair;
+}
+.sandbox-planche .planche-feuilles-props {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.sandbox-planche .planche-feuilles-props fieldset {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.4rem 0.6rem 0.6rem;
+  border: 1px solid rgba(27, 77, 66, 0.2);
+  border-radius: 8px;
+}
+.sandbox-planche .planche-feuilles-props fieldset.est-fenetre {
+  border-color: #1a5fd6;
+}
+.sandbox-planche .planche-feuilles-props legend {
+  padding: 0 0.3rem;
+  font-weight: 700;
+  color: #1b4d42;
+}
+.sandbox-planche .planche-feuilles-champ {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.4rem;
+}
+.sandbox-planche .planche-feuilles-champ > span:first-child {
+  color: rgba(27, 77, 66, 0.85);
+}
+.sandbox-planche .planche-feuilles-champ input,
+.sandbox-planche .planche-feuilles-champ select,
+.sandbox-planche .planche-feuilles-motif input {
+  min-width: 0;
+  width: 100%;
+  min-height: 30px;
+  padding: 0 0.4rem;
+  border: 1px solid rgba(27, 77, 66, 0.35);
+  border-radius: 6px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+.sandbox-planche .planche-feuilles-alerte {
+  color: rgba(138, 75, 18, 1);
+}
+.sandbox-planche .planche-feuilles .planche-debit-barre button.est-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}
+.sandbox-planche .planche-feuilles-motif {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sandbox-planche .planche-feuilles-motif input {
+  width: 13rem;
+}
+
+/* Cas 4, étape 7a : import hors du fil principal (progression, Annuler). */
+.sandbox-planche .planche-import-cours {
+  position: fixed;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(400px, calc(100vw - 32px));
+  padding: 12px 14px;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 10px;
+  box-shadow: var(--flottant-ombre);
+  font-size: 13px;
+}
+.sandbox-planche .planche-import-cours h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 15.5px;
+}
+.sandbox-planche .planche-import-cours h3 small {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: 12px;
+  opacity: 0.75;
+}
+.sandbox-planche .planche-import-aide,
+.sandbox-planche .planche-import-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.sandbox-planche .planche-import-note {
+  margin: 8px 0 0;
+}
+.sandbox-planche .planche-import-barre {
+  height: 10px;
+  margin: 4px 0 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: rgba(27, 77, 66, 0.12);
+}
+.sandbox-planche .planche-import-barre i {
+  display: block;
+  height: 100%;
+  background: #1a5fd6;
+  transition: width 0.15s linear;
+}
+.sandbox-planche .planche-import-barre i.planche-import-indetermine {
+  animation: planche-import-va-et-vient 1.2s ease-in-out infinite alternate;
+}
+@keyframes planche-import-va-et-vient {
+  from { margin-left: 0; }
+  to { margin-left: 70%; }
+}
+.sandbox-planche .planche-import-annuler {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font: inherit;
+  font-weight: 600;
+  background: var(--flottant-fond);
+  border: 1px solid rgba(27, 77, 66, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.sandbox-planche .planche-import-annuler .sandbox-picto {
+  width: 16px;
+  height: 16px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sandbox-planche .planche-import-barre i.planche-import-indetermine { animation: none; }
+}
+/* Cas 2, lot 2 : panneaux « Accrochage » et « Mètre · Mesure », sections d'Info modèle et d'Info entité. */
+.sandbox-planche .planche-accrochage h4,
+.sandbox-planche .planche-metre h4 {
+  margin: 12px 0 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-accrochage-genres {
+  margin: 0;
+}
+.sandbox-planche .planche-accrochage-ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 0;
+}
+.sandbox-planche .planche-accrochage-ligne dt,
+.sandbox-planche .planche-accrochage-ligne dd {
+  margin: 0;
+}
+.sandbox-planche .planche-accrochage-ligne dd {
+  font-weight: 600;
+  text-align: right;
+}
+.sandbox-planche .planche-accrochage-actif {
+  color: var(--accent, #2f6f4f);
+}
+.sandbox-planche .planche-accrochage-champ {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.sandbox-planche .planche-accrochage-force button[aria-pressed="true"],
+.sandbox-planche .planche-parametres button[aria-pressed="true"] {
+  background: color-mix(in srgb, #1a5fd6 18%, transparent);
+}
+.sandbox-planche .planche-parametres {
+  list-style: none;
+  margin: 4px 0;
+  padding: 0;
+}
+.sandbox-planche .planche-parametres button {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 32px;
+}
+.sandbox-planche .planche-info-titre {
+  margin-top: 8px;
+  font-weight: 600;
+}
+.sandbox-planche .planche-info-large {
+  grid-column: 1 / -1;
+}
+/* Cas 2, lot 3 : relevé du Contrôle (tolérances, parcours, correction), fond DAO, pièces du permis. */
+.sandbox-planche .planche-controle-releve {
+  margin: 0 0 6px;
+}
+.sandbox-planche .planche-controle-seuil {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.sandbox-planche .planche-controle-seuil input {
+  width: 4.2em;
+  min-height: 28px;
+  padding: 1px 4px;
+  font: inherit;
+}
+.sandbox-planche .planche-controle-lim {
+  color: #8f6a1f;
+}
+.sandbox-planche .planche-controle-position {
+  align-self: center;
+  font-weight: 600;
+}
+.sandbox-planche .planche-debit-barre button.planche-controle-principal:not(:disabled) {
+  color: #ffffff;
+  background: #1b4d42;
+  border-color: #1b4d42;
+}
+.sandbox-planche .planche-controle-champ {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.sandbox-planche .planche-controle-case,
+.sandbox-planche .planche-controle-fichier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+}
+.sandbox-planche .planche-controle-fichier input[type="file"] {
+  max-width: 100%;
 }

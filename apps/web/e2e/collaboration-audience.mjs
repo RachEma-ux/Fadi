@@ -126,20 +126,15 @@ await pOwner.goto(`${BASE}/projets/${pid}?module=collaboration`);
 await pOwner.waitForSelector("#collab-comments", { timeout: 20000 });
 const formulaire = pOwner.locator("section[aria-labelledby='collab-comments'] form.comment-form").last();
 check("interface propriétaire : « Visible par les lecteurs » au formulaire, décoché", await formulaire.locator("[data-comment-audience]").count() === 1 && !(await formulaire.locator("[data-comment-audience]").isChecked()));
-// Les commandes viennent de listes chargées après le fil (membres, commentaires) : on attend leur rendu (CI plus lente)
-// avant de juger, et l'échec nomme les commandes manquantes.
-// `toutes` vrai : rend vrai quand plus rien ne manque (attente) ; faux : rend la liste des commandes manquantes.
-const commandesSansRegle = (toutes) => {
-  const manque = ["visible-lecteurs", "rendre-visible", "export-lecteur"].filter((c) => {
+// Les fils et la liste des membres arrivent après le formulaire (requêtes distinctes) : on attend que les trois commandes
+// soient affichées avant de les contrôler, sans quoi le contrôle dépend de l'ordre d'arrivée des réponses.
+await pOwner.waitForFunction(() => ["visible-lecteurs", "rendre-visible", "export-lecteur"].every((c) => document.querySelector(`[data-commande-collaboration="${c}"]`)), null, { timeout: 15000 }).catch(() => {});
+check("règle d'or : chaque commande du propriétaire porte son icône, son raccourci affiché et déclaré",
+  await pOwner.evaluate(() => ["visible-lecteurs", "rendre-visible", "export-lecteur"].every((c) => {
     const el = document.querySelector(`[data-commande-collaboration="${c}"]`);
     const bloc = el?.closest("label, button") ?? el;
-    return !(el?.getAttribute("aria-keyshortcuts")?.startsWith("Alt+Shift+") && bloc?.querySelector(".collab-icon") && bloc?.querySelector(".collab-raccourci"));
-  });
-  return toutes ? manque.length === 0 : manque;
-};
-await pOwner.waitForFunction(commandesSansRegle, true, { timeout: 15000 }).catch(() => undefined);
-const manquantes = await pOwner.evaluate(commandesSansRegle, false);
-check("règle d'or : chaque commande du propriétaire porte son icône, son raccourci affiché et déclaré", manquantes.length === 0, manquantes.join(", "));
+    return el?.getAttribute("aria-keyshortcuts")?.startsWith("Alt+Shift+") && bloc?.querySelector(".collab-icon") && bloc?.querySelector(".collab-raccourci");
+  })));
 await formulaire.locator("textarea").fill("Fil ouvert écrit dans l'interface");
 await formulaire.locator("textarea").focus();
 await pOwner.keyboard.press("Alt+Shift+Digit1");
