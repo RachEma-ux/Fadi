@@ -1019,7 +1019,7 @@ export interface CommandeVisionneuse {
 }
 export const COMMANDES_VISIONNEUSE: readonly CommandeVisionneuse[] = (["visionneuse", "exporter-visionneuse"] as const).map((id) => ({ id, ...depuisRegistre(id), libelle: `planche.visionneuse.${id}` as CleMessage, court: `planche.visionneuse.court.${id}` as CleMessage }));
 
-export function disponibiliteVisionneuse(id: IdCommandeVisionneuse, s: { readonly triangles: number }): Disponibilite {
+export function disponibiliteVisionneuse(id: IdCommandeVisionneuse, s: { readonly nonVide: boolean }): Disponibilite {
   if (id === "visionneuse") return { disponible: true, motif: null };
-  return s.triangles > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.visionneuse.motif.vide" };
+  return s.nonVide ? { disponible: true, motif: null } : { disponible: false, motif: "planche.visionneuse.motif.vide" };
 }

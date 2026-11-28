@@ -27,13 +27,13 @@ var objets = D.maillages.map(function (m) {
     for (var j = 0; j < 9; j++) { var d = j % 3; if (s[j] < min[d]) min[d] = s[j]; if (s[j] > max[d]) max[d] = s[j]; }
   }
   total += n / 3;
-  var b = D.balises[m.balise];
+  var b = D.balises[m.balises[m.balises.length - 1]];
   var coul = [0.86, 0.88, 0.86];
   if (b && /^#[0-9a-fA-F]{6}$/.test(b.couleur)) for (var t = 0; t < 3; t++) coul[t] = coul[t] * 0.7 + parseInt(b.couleur.substr(1 + t * 2, 2), 16) / 255 * 0.3;
-  return { nom: m.nom, balise: m.balise, pos: pos, nor: nor, n: n, couleur: coul, tampons: null };
+  return { nom: m.nom, balises: m.balises, pos: pos, nor: nor, n: n, couleur: coul, tampons: null };
 });
 var visibles = D.balises.map(function (b) { return b.visible; });
-var vu = function (o) { return o.balise < 0 || visibles[o.balise]; };
+var vu = function (o) { for (var i = 0; i < o.balises.length; i++) if (!visibles[o.balises[i]]) return false; return true; };
 if (!isFinite(min[0])) { min = [0, 0, 0]; max = [1, 1, 1]; }
 var centre = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
 var rayon = Math.max(0.5, Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]) / 2);

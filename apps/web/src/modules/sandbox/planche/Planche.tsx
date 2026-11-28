@@ -386,6 +386,7 @@ import {
   IMAGE_FOND_MAX,
   ecrireVisionneuse,
   trianglesVisionneuse,
+  maquetteVisionneuseNonVide,
   versionVisionneuse,
   empreinteAbregee,
   empreintePlanche as empreinteDeLaPlanche,
@@ -7002,7 +7003,9 @@ export function Planche({ readOnly: lectureProp = false }: PropsPlanche) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panneau, hist.present.modele, balisesVis, scenesExcluesVis, nomCourant, trianglesVis]);
-  const disponibiliteCommandeVis = (id: IdCommandeVisionneuse) => disponibiliteVisionneuse(id, { triangles: panneau === "visionneuse" ? trianglesVis : trianglesVisionneuse(hist.present.modele) });
+  // Disponibilité lue à chaque rendu (liste des commandes) : test rapide mémorisé par identité du modèle, sans triangulation.
+  const nonVideVis = useMemo(() => maquetteVisionneuseNonVide(hist.present.modele), [hist.present.modele]);
+  const disponibiliteCommandeVis = (id: IdCommandeVisionneuse) => disponibiliteVisionneuse(id, { nonVide: nonVideVis });
   const executerVis = (id: IdCommandeVisionneuse) => {
     setPanneau("visionneuse");
     if (id === "visionneuse" || !disponibiliteCommandeVis(id).disponible) return;

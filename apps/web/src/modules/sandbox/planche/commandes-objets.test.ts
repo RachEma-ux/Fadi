@@ -288,8 +288,8 @@ describe("KML / KMZ (lot C4, étape 7b) : disponibilité des commandes", () => {
 
 describe("visionneuse hors ligne (lot C4, étape 7d) : disponibilité des commandes", () => {
   it("le panneau s'ouvre toujours ; l'export exige une maquette non vide, même en lecture seule", () => {
-    expect(disponibiliteVisionneuse("visionneuse", { triangles: 0 }).disponible).toBe(true);
-    expect(disponibiliteVisionneuse("exporter-visionneuse", { triangles: 0 }).motif).toBe("planche.visionneuse.motif.vide");
-    expect(disponibiliteVisionneuse("exporter-visionneuse", { triangles: 12 }).disponible).toBe(true);
+    expect(disponibiliteVisionneuse("visionneuse", { nonVide: false }).disponible).toBe(true);
+    expect(disponibiliteVisionneuse("exporter-visionneuse", { nonVide: false }).motif).toBe("planche.visionneuse.motif.vide");
+    expect(disponibiliteVisionneuse("exporter-visionneuse", { nonVide: true }).disponible).toBe(true);
   });
 });

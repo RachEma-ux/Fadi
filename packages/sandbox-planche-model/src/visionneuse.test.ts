@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ajouterRectangle, grouper, modeleVide, pousserTirer, type Modele } from "./geometrie-libre.js";
 import { ajouterScenes } from "./balises-l4.js";
 import { v3 } from "./vecteur.js";
-import { donneesVisionneuse, ecrireVisionneuse, empreinteAbregee, jsonDansScript, trianglesVisionneuse, versionVisionneuse } from "./visionneuse.js";
+import { donneesVisionneuse, ecrireVisionneuse, maquetteVisionneuseNonVide, empreinteAbregee, jsonDansScript, trianglesVisionneuse, versionVisionneuse } from "./visionneuse.js";
 import { SCRIPT_VISIONNEUSE } from "./visionneuse-script.js";
 
 const MAINTENANT = new Date("2026-11-28T10:58:00Z");
@@ -38,12 +38,47 @@ describe("visionneuse hors ligne (cas 4, lot C4, étape 7d)", () => {
     const d = donneesVisionneuse(m, { nom: "Maison", balises: true, scenes: [scenes[1]!, "inconnue"], maintenant: MAINTENANT });
     expect(d.maillages).toHaveLength(2);
     expect(d.balises).toEqual([{ id: "b1", nom: "Façades", couleur: "#d6452f", visible: false }]);
-    expect(d.maillages.find((x) => x.nom === "Boîte <1>")!.balise).toBe(0);
+    expect(d.maillages.find((x) => x.nom === "Boîte <1>")!.balises).toEqual([0]);
     for (const x of d.maillages) for (const p of x.positions) expect(Number.isInteger(p)).toBe(true);
     expect(Math.max(...d.maillages.flatMap((x) => x.positions))).toBe(6000);
     expect(d.vues.map((v) => v.nom)).toEqual(["Façade sud"]);
     expect(d.vues[0]!.projection).toBe("parallele");
     expect(trianglesVisionneuse(m)).toBe(14);
+  });
+
+  it("balises des faces libres et des faces d'un objet : gardées face par face, visibles si toutes le sont", () => {
+    const { m } = maison();
+    const libre = Object.values(m.racine.faces)[0]!;
+    const occ = Object.values(m.racine.occurrences)[0]!;
+    const def = m.definitions[occ.definition]!;
+    const { balise: _b, ...sansBalise } = occ;
+    const faceObjet = Object.values(def.contenu.faces).sort((a, b) => (a.id < b.id ? -1 : 1))[0]!;
+    const m2: Modele = {
+      ...m,
+      racine: { ...m.racine, faces: { ...m.racine.faces, [libre.id]: { ...libre, balise: "b2" } }, occurrences: { ...m.racine.occurrences, [occ.id]: sansBalise } },
+      definitions: { ...m.definitions, [def.id]: { ...def, contenu: { ...def.contenu, faces: { ...def.contenu.faces, [faceObjet.id]: { ...faceObjet, balise: "b2" } } } } },
+      annotations: { ...m.annotations!, balises: { ...m.annotations!.balises, b2: { id: "b2", nom: "Relevé", couleur: "#2f6fd6", visible: false } } },
+    };
+    const avec = donneesVisionneuse(m2, { nom: "Maison", balises: true, scenes: [], maintenant: MAINTENANT });
+    const b2 = avec.balises.findIndex((b) => b.id === "b2");
+    expect(avec.maillages.find((x) => x.nom === "Géométrie libre")!.balises).toEqual([b2]);
+    const boite = avec.maillages.filter((x) => x.nom === "Boîte <1>");
+    expect(boite.map((x) => x.balises)).toEqual(expect.arrayContaining([[], [b2]]));
+    expect(boite.reduce((n, x) => n + x.triangles.length / 3, 0)).toBe(12);
+    const sans = donneesVisionneuse(m2, { nom: "Maison", balises: false, scenes: [], maintenant: MAINTENANT });
+    expect(sans.maillages.map((x) => x.nom)).toEqual(["Boîte <1>"]);
+    expect(sans.maillages[0]!.triangles.length / 3).toBe(10);
+    // Objet imbriqué : la balise de l'objet parent masque aussi ce qu'il contient.
+    const enfant = donneesVisionneuse(m, { nom: "Maison", balises: false, scenes: [], maintenant: MAINTENANT });
+    expect(enfant.maillages.some((x) => x.nom === "Boîte <1>")).toBe(false);
+  });
+
+  it("le compte de triangles est mémorisé par identité du modèle", () => {
+    const { m } = maison();
+    expect(trianglesVisionneuse(m)).toBe(trianglesVisionneuse(m));
+    expect(trianglesVisionneuse({ ...m })).toBe(14);
+    expect(maquetteVisionneuseNonVide(m)).toBe(true);
+    expect(maquetteVisionneuseNonVide(modeleVide())).toBe(false);
   });
 
   it("sans les balises : ce qui est masqué par sa balise ne part pas", () => {

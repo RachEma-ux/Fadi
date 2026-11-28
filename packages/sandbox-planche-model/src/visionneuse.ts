@@ -5,9 +5,10 @@
  * la version et l'empreinte de la Planche. Rien n'y est modifiable ; aucune ressource externe (politique de sécurité
  * `default-src 'none'`) : ni réseau, ni serveur. Texte reproductible : même modèle, mêmes options, mêmes octets.
  */
-import type { Id, Modele } from "./geometrie-libre.js";
+import { appliquer, composer, positionsFace, transformerNormale, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
 import { empreintePlanche } from "./delta.js";
-import { maillagesPlanche } from "./representation.js";
+import { triangulerFace } from "./maillage.js";
+import { normalize, type Vec3 } from "./vecteur.js";
 import { SCRIPT_VISIONNEUSE } from "./visionneuse-script.js";
 
 export interface OptionsVisionneuse {
@@ -32,8 +33,11 @@ export interface BaliseVisionneuse {
 /** Maillage écrit : positions en millimètres entiers (coordonnées locales), indices de triangles. */
 export interface MaillageVisionneuse {
   readonly nom: string;
-  /** Indice dans `balises`, ou -1 sans balise. */
-  readonly balise: number;
+  /**
+   * Indices dans `balises` de toutes les balises portées sur le chemin (objet de la racine, objets imbriqués, face) :
+   * le maillage n'est visible que si toutes le sont. Vide : sans balise.
+   */
+  readonly balises: readonly number[];
   readonly positions: readonly number[];
   readonly triangles: readonly number[];
 }
@@ -76,15 +80,89 @@ export function versionVisionneuse(d: Date): string {
 /** Empreinte abrégée affichée : quatre premiers groupes de quatre signes, puis les quatre derniers (« 7f3a 91c0 … 2c21 »). */
 export const empreinteAbregee = (e: string): string => (e.length > 12 ? `${e.slice(0, 4)} ${e.slice(4, 8)} … ${e.slice(-4)}` : e);
 
-/** Nombre de triangles que la visionneuse portera (maquette visible, et objets des balises masquées sur option). */
-export function trianglesVisionneuse(m: Modele): number {
-  return maillagesPlanche(m).reduce((n, x) => n + x.triangles.length / 3, 0);
+/** Morceau de maquette : objet de la racine (ou géométrie libre) et balises du chemin, triangles en mètres. */
+interface Morceau {
+  readonly nom: string;
+  readonly balises: readonly Id[];
+  readonly positions: number[];
+  readonly triangles: number[];
+}
+
+/**
+ * Parcourt la maquette visible (objets et faces masqués exclus) en gardant les balises de chaque face : celles des objets
+ * qui la contiennent, puis la sienne. Un morceau par objet de la racine et par jeu de balises, dans un ordre stable.
+ */
+function morceaux(m: Modele): Morceau[] {
+  const parCle = new Map<string, Morceau>();
+  const ordre: Morceau[] = [];
+  const ajouter = (nom: string, cleObjet: string, balises: readonly Id[], c: Contexte, M: Matrice4 | null, profondeur: number): void => {
+    if (profondeur > 32) return;
+    for (const o of Object.values(c.occurrences).sort((a, b) => (a.id < b.id ? -1 : 1))) {
+      if (o.masquee) continue;
+      const d = m.definitions[o.definition];
+      if (!d) continue;
+      const b = o.balise ? [...balises, o.balise] : balises;
+      ajouter(profondeur === 0 ? (o.nom ?? d.nom) : nom, profondeur === 0 ? o.id : cleObjet, b, d.contenu, M ? composer(M, o.transformation) : o.transformation, profondeur + 1);
+    }
+    for (const f of Object.values(c.faces).sort((a, b) => (a.id < b.id ? -1 : 1))) {
+      if (f.masquee) continue;
+      const b = f.balise ? [...balises, f.balise] : balises;
+      const cle = `${cleObjet}|${[...new Set(b)].sort().join(",")}`;
+      let x = parCle.get(cle);
+      if (!x) {
+        x = { nom, balises: [...new Set(b)].sort(), positions: [], triangles: [] };
+        parCle.set(cle, x);
+        ordre.push(x);
+      }
+      const p = positionsFace(c, f);
+      const T = (q: Vec3): Vec3 => (M ? appliquer(M, q) : q);
+      const exterieur = p.exterieur.map(T);
+      const trous = p.trous.map((t) => t.map(T));
+      const tri = triangulerFace(exterieur, trous, normalize(M ? transformerNormale(M, f.normale) : f.normale));
+      const base = x.positions.length / 3;
+      for (const q of [...exterieur, ...trous.flat()]) x.positions.push(q.x, q.y, q.z);
+      for (const k of tri) x.triangles.push(base + k);
+    }
+  };
+  ajouter("Géométrie libre", "racine", [], m.racine, null, 0);
+  return ordre.filter((x) => x.triangles.length > 0);
 }
 
 const mm = (x: number): number => {
   const v = Math.round(x * 1000);
   return v === 0 ? 0 : v; // jamais « -0 » dans le texte
 };
+
+/**
+ * Vrai dès qu'une face visible existe (racine ou objet non masqué, à toute profondeur) : test rapide, sans triangulation,
+ * pour la disponibilité de l'export lue à chaque rendu.
+ */
+export function maquetteVisionneuseNonVide(m: Modele): boolean {
+  const voir = (c: Contexte, profondeur: number): boolean => {
+    if (profondeur > 32) return false;
+    for (const f of Object.values(c.faces)) if (!f.masquee) return true;
+    for (const o of Object.values(c.occurrences)) {
+      const d = o.masquee ? undefined : m.definitions[o.definition];
+      if (d && voir(d.contenu, profondeur + 1)) return true;
+    }
+    return false;
+  };
+  return voir(m.racine, 0);
+}
+
+const comptes = new WeakMap<Modele, number>();
+/**
+ * Nombre de triangles que la visionneuse portera (maquette visible, et objets des balises masquées sur option).
+ * Mémorisé par identité du modèle : la disponibilité des commandes le lit à chaque rendu.
+ */
+export function trianglesVisionneuse(m: Modele): number {
+  let n = comptes.get(m);
+  if (n === undefined) {
+    n = morceaux(m).reduce((t, x) => t + x.triangles.length / 3, 0);
+    comptes.set(m, n);
+  }
+  return n;
+}
 
 /** Contenu du fichier, sans le HTML : ce que la visionneuse affiche. */
 export function donneesVisionneuse(m: Modele, o: OptionsVisionneuse): DonneesVisionneuse {
@@ -98,13 +176,11 @@ export function donneesVisionneuse(m: Modele, o: OptionsVisionneuse): DonneesVis
       balises.push({ id: b.id, nom: b.nom, couleur: b.couleur, visible: b.visible });
     }
   const maillages: MaillageVisionneuse[] = [];
-  for (const x of maillagesPlanche(m)) {
-    if (!x.triangles.length) continue;
-    const idBalise = x.id === "racine" ? undefined : m.racine.occurrences[x.id]?.balise;
-    const b = idBalise ? toutes[idBalise] : undefined;
-    // Sans les balises dans le fichier, ce qui est masqué par sa balise ne part pas.
-    if (!o.balises && b && !b.visible) continue;
-    maillages.push({ nom: x.nom, balise: b ? (indice.get(b.id) ?? -1) : -1, positions: x.positions.map(mm), triangles: [...x.triangles] });
+  for (const x of morceaux(m)) {
+    const connues = x.balises.filter((id) => toutes[id]);
+    // Sans les balises dans le fichier, ce qu'une balise du chemin masque ne part pas.
+    if (!o.balises && connues.some((id) => !toutes[id]!.visible)) continue;
+    maillages.push({ nom: x.nom, balises: o.balises ? connues.map((id) => indice.get(id)!) : [], positions: x.positions.map(mm), triangles: x.triangles });
   }
   const scenes = an?.scenes ?? {};
   const vues: VueVisionneuse[] = [];
