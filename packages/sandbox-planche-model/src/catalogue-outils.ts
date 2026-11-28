@@ -2441,6 +2441,33 @@ export function secondTemps(r: string): string | null {
   return normaliserRaccourci(a!) === ENTREE_DEUX_TEMPS ? normaliserRaccourci(b) : null;
 }
 
+/**
+ * Menu par familles (décision du maître d'ouvrage, 28 novembre 2026, maquette `c4-deux-temps-familles.png`) : les lettres
+ * seules du second temps étant épuisées, une **porte** (Maj + lettre) ouvre la liste d'une famille, où chaque commande a
+ * sa touche (« Ctrl+Maj+Espace, Maj+I, N »). Les raccourcis en deux temps existants ne changent pas.
+ */
+export type FamilleDeuxTemps = "echanges" | "batiment" | "site" | "rendu" | "mise-en-page" | "collaboration";
+export const FAMILLES_DEUX_TEMPS: readonly { readonly id: FamilleDeuxTemps; readonly porte: string }[] = Object.freeze([
+  { id: "echanges", porte: "Maj+I" },
+  { id: "batiment", porte: "Maj+B" },
+  { id: "site", porte: "Maj+T" },
+  { id: "rendu", porte: "Maj+M" },
+  { id: "mise-en-page", porte: "Maj+S" },
+  { id: "collaboration", porte: "Maj+L" },
+]);
+/** Raccourci en trois temps (entrée, porte d'une famille, touche) : la famille et la touche, sinon null. */
+export function troisTemps(r: string): { readonly famille: FamilleDeuxTemps; readonly touche: string } | null {
+  const parts = r.split(",");
+  if (parts.length !== 3 || normaliserRaccourci(parts[0]!) !== ENTREE_DEUX_TEMPS) return null;
+  const porte = normaliserRaccourci(parts[1]!);
+  const f = FAMILLES_DEUX_TEMPS.find((x) => x.porte === porte);
+  return f ? { famille: f.id, touche: normaliserRaccourci(parts[2]!) } : null;
+}
+/** Texte comparé par la recherche de l'encadré : minuscules, sans accents ni espaces superflus. */
+export function texteRecherche(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 /** Forme canonique d'un raccourci : modificateurs dans l'ordre Ctrl, Alt, Maj, puis la touche (`Ctrl+Maj+E`) ; en deux
  * temps, chaque temps sous cette forme, séparés par « , » (`Ctrl+Maj+Espace, R`). */
 export function normaliserRaccourci(r: string): string {

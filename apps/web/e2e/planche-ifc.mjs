@@ -194,6 +194,44 @@ await imp.waitFor();
 regle &&= ((await imp.locator("[data-planche-commande='importer-ifc']").getAttribute("title")) ?? "").includes("Ctrl+Maj+Espace, Maj+O") && (await imp.locator("[data-planche-commande='importer-ifc'] svg").count()) === 1;
 check("chaque commande des deux panneaux : icône et raccourci", regle);
 
+// --- Menu par familles (28 novembre 2026) : recherche par nom dans l'encadré en deux temps ----------------------------------
+await vue.focus();
+await page.keyboard.press("Control+Shift+Space");
+const encadre = page.locator("[data-planche-deux-temps]");
+await encadre.waitFor();
+check("encadré : champ de recherche, aucune famille affichée tant qu'aucune n'a de commande, commandes actuelles listées",
+  (await encadre.locator("[data-planche-deux-temps-recherche]").count()) === 1 && (await encadre.locator("[data-planche-deux-temps-porte]").count()) === 0
+  && (await encadre.locator("[data-planche-deux-temps-commande='ifc-structure'] kbd").textContent()) === "U");
+await page.keyboard.press("Tab");
+const champ = encadre.locator("[data-planche-deux-temps-recherche]");
+await page.waitForFunction(() => document.activeElement?.hasAttribute("data-planche-deux-temps-recherche"));
+await page.keyboard.type("ifc structu");
+const trouves = await encadre.locator("[data-planche-deux-temps-resultat]").evaluateAll((l) => l.map((x) => x.getAttribute("data-planche-deux-temps-resultat")));
+check("Tab ouvre la recherche ; « ifc structu » trouve IFC structuré et l'import, sans casse ni accents", trouves.includes("ifc-structure") && trouves.includes("import-ifc"), JSON.stringify(trouves));
+await page.waitForTimeout(5500);
+check("la recherche ouverte ne se referme pas d'elle-même (pas de délai de 5 s)", (await encadre.count()) === 1);
+const premier = trouves[0];
+check("le premier résultat est choisi, sa touche affichée", (await encadre.locator(`[data-planche-deux-temps-resultat='${premier}']`).getAttribute("aria-selected")) === "true");
+await champ.press("Escape");
+check("Échap ferme l'encadré et rend le focus à la vue", (await encadre.count()) === 0 && (await page.evaluate(() => document.activeElement?.hasAttribute("data-planche-vue"))));
+await page.keyboard.press("Control+Shift+Space");
+await encadre.waitFor();
+await page.keyboard.press("Tab");
+await page.waitForFunction(() => document.activeElement?.hasAttribute("data-planche-deux-temps-recherche"));
+await page.keyboard.type("IFC STRUCTURÉ");
+const ordre = await encadre.locator("[data-planche-deux-temps-resultat]").evaluateAll((l) => l.map((x) => x.getAttribute("data-planche-deux-temps-resultat")));
+const cible = ordre.indexOf("ifc-structure");
+for (let i = 0; i < cible; i++) await page.keyboard.press("ArrowDown");
+await page.keyboard.press("Enter");
+await page.waitForFunction(() => window.fadiPlanche.panneau() === "ifc-structure");
+check("Flèches puis Entrée lancent la commande choisie (IFC structuré)", (await encadre.count()) === 0 && (await page.evaluate(() => window.fadiPlanche.panneau())) === "ifc-structure");
+await page.keyboard.press("Control+Shift+Space");
+await encadre.waitFor();
+await page.keyboard.press("Shift+I");
+await page.waitForTimeout(80);
+check("une porte sans famille livrée ne fait rien et l'encadré se referme", (await encadre.count()) === 0);
+await page.screenshot({ path: `${OUT}/03-recherche.png` });
+
 check("aucune erreur JavaScript", erreurs.length === 0, erreurs.join(" | "));
 await browser.close();
 if (echecs > 0) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { OUTILS, normaliserRaccourci } from "@parcours/sandbox-planche-model";
-import { COMMANDES_DEUX_TEMPS, REGISTRE_COMMANDES, commandeDuClavier, commandeDuSecondTemps, estEntreeDeuxTemps, routeeParLeRegistre } from "./registre-commandes";
-import { secondTemps } from "@parcours/sandbox-planche-model";
+import { COMMANDES_DEUX_TEMPS, COMMANDES_TROIS_TEMPS, FAMILLES_AFFICHEES, REGISTRE_COMMANDES, commandeDuClavier, commandeDuSecondTemps, commandeDuTroisiemeTemps, commandesDeLaFamille, estEntreeDeuxTemps, familleDeLaPorte, rechercherCommandes, routeeParLeRegistre, touchesApresEntree, type EntreeRegistre } from "./registre-commandes";
+import { FAMILLES_DEUX_TEMPS, secondTemps } from "@parcours/sandbox-planche-model";
 import { pictoOutil, raccourciOutil, type Cle } from "./outils-planche";
 import { clePictogramme, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
 
@@ -94,5 +94,42 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
   it("une touche sans commande ne résout rien", () => {
     expect(commandeDuClavier({ key: "q", ctrlKey: false, shiftKey: false, altKey: true, code: "KeyQ" })).toBeNull();
     expect(commandeDuClavier({ key: "ArrowLeft", ctrlKey: false, shiftKey: false, altKey: false })).toBeNull();
+  });
+});
+
+describe("Menu par familles (raccourcis en trois temps, 28 novembre 2026)", () => {
+  // Commandes d'essai : les familles n'ont pas encore de commande livrée (les étapes 7d à 7f du cas 4 en ajouteront).
+  const essai: EntreeRegistre[] = [
+    { id: "visionneuse", famille: "objet", picto: REGISTRE_COMMANDES[0]!.picto, libelle: "planche.deux-temps.chercher", raccourci: "Ctrl+Maj+Espace, Maj+I, V" },
+    { id: "nuage", famille: "objet", picto: REGISTRE_COMMANDES[0]!.picto, libelle: "planche.deux-temps.chercher", raccourci: "Ctrl+Maj+Espace, Maj+I, N" },
+    { id: "mur-rideau", famille: "objet", picto: REGISTRE_COMMANDES[0]!.picto, libelle: "planche.deux-temps.chercher", raccourci: "Ctrl+Maj+Espace, Maj+B, M" },
+  ];
+  const noms: Record<string, string> = { visionneuse: "Visionneuse HTML hors ligne", nuage: "Tranche de nuage de points", "mur-rideau": "Mur rideau" };
+  const cle = (key: string, shiftKey = false, code?: string): Cle => ({ key, shiftKey, ctrlKey: false, altKey: false, ...(code ? { code } : {}) });
+
+  it("la porte Maj + lettre ouvre sa famille ; une lettre seule n'est pas une porte", () => {
+    expect(familleDeLaPorte(cle("I", true), FAMILLES_DEUX_TEMPS)).toBe("echanges");
+    expect(familleDeLaPorte(cle("b", true), FAMILLES_DEUX_TEMPS)).toBe("batiment");
+    expect(familleDeLaPorte(cle("i"), FAMILLES_DEUX_TEMPS)).toBeNull();
+    expect(familleDeLaPorte(cle("Q", true), FAMILLES_DEUX_TEMPS)).toBeNull();
+  });
+  it("le troisième temps résout la commande de la famille ouverte seulement", () => {
+    expect(commandeDuTroisiemeTemps("echanges", cle("n"), essai)?.id).toBe("nuage");
+    expect(commandeDuTroisiemeTemps("echanges", cle("m"), essai)).toBeNull();
+    expect(commandeDuTroisiemeTemps("batiment", cle("m"), essai)?.id).toBe("mur-rideau");
+    expect(commandesDeLaFamille("echanges", essai).map((e) => e.id)).toEqual(["visionneuse", "nuage"]);
+  });
+  it("touches affichées après l'entrée et recherche par nom (sans casse ni accents, filtrée par la famille ouverte)", () => {
+    expect(touchesApresEntree(essai[1]!)).toBe("Maj+I, N");
+    expect(touchesApresEntree(COMMANDES_DEUX_TEMPS[0]!)).toBe(secondTemps(COMMANDES_DEUX_TEMPS[0]!.raccourci));
+    const nom = (e: EntreeRegistre) => noms[e.id] ?? "";
+    expect(rechercherCommandes("NUAGE", nom, null, essai).map((e) => e.id)).toEqual(["nuage"]);
+    expect(rechercherCommandes("ri", nom, null, essai).map((e) => e.id)).toEqual(["mur-rideau"]);
+    expect(rechercherCommandes("ri", nom, "echanges", essai)).toEqual([]);
+    expect(rechercherCommandes("  ", nom, null, essai)).toEqual([]);
+  });
+  it("aucune famille affichée sans commande ; les commandes en deux temps restent inchangées", () => {
+    expect(FAMILLES_AFFICHEES.every((f) => commandesDeLaFamille(f.id).length > 0)).toBe(true);
+    expect(COMMANDES_TROIS_TEMPS.every((e) => routeeParLeRegistre(e))).toBe(true);
   });
 });
